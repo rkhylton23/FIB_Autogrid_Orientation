@@ -28,7 +28,13 @@ def determine_grid_orientation(notch_direction, lamellae_location, milling_angle
     return cassette_notch, krios_notch, krios_stage_tilt
 
 # Streamlit App Interface
-st.title("Cryo-ET Grid Orientation Helper")
+st.set_page_config(
+    page_title="FIB₂TEM: Grid Orientation Assistant",
+    page_icon="autogrid_32x32.png",
+    layout="centered",
+)
+
+st.title("FIB₂TEM: Grid Orientation Assistant")
 
 st.write("""
 This tool helps you determine the correct orientation for loading your grid into the cassette and the Titan Krios stage tilt angle.
@@ -38,20 +44,46 @@ This tool helps you determine the correct orientation for loading your grid into
 notch_direction = st.selectbox("1. Select the notch direction in the FIB Shuttle:", 
                                ["Up", "Up-Right", "Right", "Down-Right", "Down", "Down-Left", "Left", "Up-Left"])
 
-lamellae_location = st.selectbox("2. Select the lamellae location:", ["bottom-right", "top-left"])
+# Lamellae Location Section
+st.write("2. Select the lamellae location:")
+lamellae_bottom_right = st.checkbox("Lamellae in Bottom-right (Normal Load)")
+lamellae_top_left = st.checkbox("Lamellae in Top-left (Reverse Load)")
 
-milling_angle = st.number_input("3. Enter the milling angle (degrees):", min_value=0, max_value=90, step=1, value=10)
+# Validate Lamellae Selection
+if lamellae_bottom_right and lamellae_top_left:
+    st.error("Please select only one lamella location.")
+elif lamellae_bottom_right:
+    lamellae_location = "bottom-right"
+elif lamellae_top_left:
+    lamellae_location = "top-left"
 
-shuttle_type = st.selectbox("4. Select the shuttle type:", ["45", "35"])
+# Shuttle Type Section
+st.write("3. Select the shuttle type:")
+shuttle_45 = st.checkbox("45° Shuttle")
+shuttle_35 = st.checkbox("35° Shuttle")
 
-# Run logic
+# Validate Shuttle Type Selection
+if shuttle_45 and shuttle_35:
+    st.error("Please select only one shuttle type.")
+elif shuttle_45:
+    shuttle_type = "45"
+elif shuttle_35:
+    shuttle_type = "35"
+
+# Milling Angle Input
+milling_angle = st.number_input("4. Enter the milling angle (degrees):", min_value=0, max_value=90, step=1, value=10)
+
+# Run logic if everything is valid
 if st.button("Calculate"):
-    cassette_notch, krios_notch, krios_stage_tilt = determine_grid_orientation(
-        notch_direction, lamellae_location, milling_angle, shuttle_type
-    )
-    
-    # Display Results
-    st.subheader("Results:")
-    st.write(f"**1. Cassette Notch Direction:** {cassette_notch}")
-    st.write(f"**2. Krios Stage Notch Direction:** {krios_notch}")
-    st.write(f"**3. Krios Stage Tilt Angle:** {krios_stage_tilt:.1f}°")
+    if not (lamellae_bottom_right or lamellae_top_left) or not (shuttle_45 or shuttle_35):
+        st.error("Please fix the above errors before calculating.")
+    else:
+        cassette_notch, krios_notch, krios_stage_tilt = determine_grid_orientation(
+            notch_direction, lamellae_location, milling_angle, shuttle_type
+        )
+
+        # Display Results
+        st.subheader("Results:")
+        st.write(f"**1. Cassette Notch Direction:** {cassette_notch}")
+        st.write(f"**2. Krios Stage Notch Direction:** {krios_notch}")
+        st.write(f"**3. Krios Stage Tilt Angle:** {krios_stage_tilt:.1f}°")
